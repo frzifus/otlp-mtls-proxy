@@ -3,15 +3,22 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"flag"
 	"log"
 	"net/http"
 	"os"
 )
 
 func main() {
+	var (
+		target   = flag.String("target", "http://localhost:8318", "endpoint")
+		rootCA   = flag.String("root-ca", "tls/rootCA.crt", "path")
+		certFile = flag.String("cert-file", "tls/server.crt", "path")
+		keyFile  = flag.String("key-file", "tls/server.key", "path")
+	)
+	flag.Parse()
 	// TODO: allow configuring endpoint.
-	const target = "http://localhost:8318"
-	caCert, err := os.ReadFile("tls/rootCA.crt")
+	caCert, err := os.ReadFile(*rootCA)
 	if err != nil {
 		log.Fatalf("Failed to read CA certificate: %v", err)
 	}
@@ -21,12 +28,12 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /v1/metrics", newCommonNameInjector[*ExportMetricsServiceRequest](target))
-	mux.HandleFunc("POST /v1/traces", newCommonNameInjector[*ExportTraceServiceRequest](target))
-	mux.HandleFunc("POST /v1/logs", newCommonNameInjector[*ExportLogsServiceRequest](target))
+	mux.HandleFunc("POST /v1/metrics", newCommonNameInjector[*ExportMetricsServiceRequest](*target))
+	mux.HandleFunc("POST /v1/traces", newCommonNameInjector[*ExportTraceServiceRequest](*target))
+	mux.HandleFunc("POST /v1/logs", newCommonNameInjector[*ExportLogsServiceRequest](*target))
 
 	srv := &http.Server{
-		Addr: "localhost.localdomain:4318",
+		Addr: "0.0.0.0:4318",
 		TLSConfig: &tls.Config{
 			ClientAuth: tls.RequireAndVerifyClientCert,
 			ClientCAs:  caCertPool,
@@ -34,7 +41,7 @@ func main() {
 		Handler: mwDecompression(mux),
 	}
 
-	if err := srv.ListenAndServeTLS("tls/server.crt", "tls/server.key"); err != nil {
+	if err := srv.ListenAndServeTLS(*certFile, *keyFile); err != nil {
 		log.Fatalf("Failed to serve: %v", err)
 	}
 }
