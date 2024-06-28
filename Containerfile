@@ -12,4 +12,4 @@ COPY --from=0 /otel-mtls-proxy /otel-mtls-proxy
 
 EXPOSE 4318
 
-CMD ["otel-mtls-proxy"]
+CMD ["/otel-mtls-proxy"]
