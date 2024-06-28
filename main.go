@@ -10,7 +10,7 @@ import (
 
 func main() {
 	// TODO: allow configuring endpoint.
-	const target = "http://localhost.localdomain:8318"
+	const target = "http://localhost:8318"
 	caCert, err := os.ReadFile("tls/rootCA.crt")
 	if err != nil {
 		log.Fatalf("Failed to read CA certificate: %v", err)
